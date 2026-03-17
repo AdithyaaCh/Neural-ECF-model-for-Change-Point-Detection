@@ -1,0 +1,5 @@
+Distribution,Dimension,FPR
+student_t,d=2,21.599999999999994
+student_t,d=10,20.799999999999997
+sub_gaussian,d=2,19.099999999999994
+sub_gaussian,d=10,20.700000000000003
