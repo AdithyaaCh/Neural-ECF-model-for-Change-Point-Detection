@@ -61,9 +61,12 @@ A neural network is trained using triplet loss:
 - Negative: window from different regime  
 
 The objective is to enforce:
+
 $$
 \text{sim}(A, P) - \text{sim}(A, N) \geq \text{margin}
 $$
+
+
 
 In practice:
 
@@ -83,6 +86,7 @@ After training:
    - $z_f(t)$: future window  
 
 3. Compute detection score:
+
 $$
 D(t) = 1 - \langle z_p(t), z_f(t) \rangle
 $$
