@@ -60,6 +60,8 @@ A neural network is trained using triplet loss:
 - Positive: nearby window from same regime  
 - Negative: window from different regime  
 
+- The neural network only learns a frequency matrix and does not correspond to a deep architecture. 
+
 The objective is to enforce:
 
 $$
