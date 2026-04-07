@@ -3,6 +3,7 @@
 ## Overview
 
 This project explores a representation learning approach for multivariate change point detection using a Neural Empirical Characteristic Function (Neural-ECF) model.
+Parent paper - "https://www.sciencedirect.com/science/article/pii/S1566253525005184"
 
 The core idea is to learn a transformation that maps time-series windows into a feature space where distributional differences between segments become easier to detect. This learned representation is then used within a sliding-window framework to identify structural changes in the data.
 
