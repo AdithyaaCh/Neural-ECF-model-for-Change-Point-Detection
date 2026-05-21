@@ -20,7 +20,6 @@ sys.path.append("..")
 from utils.ks_2samp import ks_2samp
 from utils.ndtest import ks2d2s
 
-# Pure Python MMD (to avoid R crashes)
 class PurePythonMMDTest:
     def __init__(self, df1, df2):
         self.x = df1.values if isinstance(df1, pd.DataFrame) else df1
@@ -46,9 +45,6 @@ class PurePythonMMDTest:
         p_val = (greater + 1) / (n_permutations + 1)
         return p_val, true_stat
 
-# ==========================================
-# REFINED CHANGE DETECTOR (Exact Author-Aligned)
-# ==========================================
 class ChangeDetector:
     def __init__(self, test_name: str = "KSTest", bn: int = 200) -> None:
         self.boot_num = bn
@@ -125,7 +121,6 @@ class ChangeDetector:
         if change_points.empty:
             return pd.DataFrame() if output_type == "pd.DataFrame" else np.array([])
 
-        # 2. Grouping Logic
         change_points = change_points.copy()
         change_points["group"] = None
         values = change_points.id.values
@@ -149,7 +144,6 @@ class ChangeDetector:
             ids = results_df[results_df.id.isin(groups[key])].index
             results_df.loc[ids, "group"] = key
 
-        # 3. Selection
         cp_id = []
         if based_on == "pvalue":
             cp_values = results_df.groupby(by="group")["pvalue"].min().reset_index().values
@@ -173,9 +167,6 @@ class ChangeDetector:
             return cp
         return cp.id.values.astype(int)
 
-# ==========================================
-# MIDAST WRAPPER & ALGO ESTIMATION
-# ==========================================
 class MIDAST:
     def __init__(self, window_size=200, shift=10, test_name="KSTest"):
         self.window_size = window_size
@@ -203,9 +194,6 @@ def run_algo1_and_algo2(X: np.ndarray, target_cps: int, shift: int = 10) -> tupl
     k_optimal = max(1, int(w_optimal / (100 * shift)))
     return w_optimal, k_optimal
 
-# ==========================================
-# BENCHMARK WRAPPERS
-# ==========================================
 def run_midast_ks(X: np.ndarray, dim: int, target_cps: int = 2) -> np.ndarray:
     w, k = run_algo1_and_algo2(X, target_cps, shift=10)
     model = MIDAST(window_size=w, shift=10, test_name="KSTest")

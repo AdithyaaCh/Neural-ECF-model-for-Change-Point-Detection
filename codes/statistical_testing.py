@@ -22,7 +22,7 @@ def scan_series(model, X_series, L, gap, scan_step, device):
     return indices, np.array(scores)
 
 def compute_batched_p_value(model, past_tensor, future_tensor, n_permutations=100):
-    """Step 3: Rigorous verification using Batched PyTorch Permutations."""
+    """Step 2: Rigorous verification using Batched PyTorch Permutations."""
     device = next(model.parameters()).device
     L = past_tensor.shape[1]
     

@@ -11,7 +11,6 @@ class SpectralECFDetector(nn.Module):
         """
         super().__init__()
         
-        # 1. Learnable Frequency Matrix (replaces the CNN)
         # Shape: (M frequencies, in_channels)
         # We initialize with standard normal, but this will update during training
         self.U = nn.Parameter(torch.randn(M, in_channels))
