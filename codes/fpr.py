@@ -1,11 +1,10 @@
 import torch
 import numpy as np
-import pandas as pd  # Explicitly here so we don't forget!
+import pandas as pd  
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 from matplotlib.gridspec import GridSpec
-# Import your model and generators
 from models import SpectralECFDetector
 from student_t import generate_student_t_segment
 from sub_gaussian import generate_subgaussian_segment
@@ -18,7 +17,6 @@ def run_comprehensive_fpr_experiment():
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Configuration
     dimensions = [2, 10]
     distributions = ['student_t', 'sub_gaussian']
     n_trials = 1000 
@@ -39,7 +37,6 @@ def run_comprehensive_fpr_experiment():
             
             model = SpectralECFDetector(in_channels=d, M=128).to(device)
             try:
-                # Assuming weights were saved from your previous training runs
                 model.load_state_dict(torch.load(f"spectral_cnn_d{d}.pt", map_location=device))
                 model.eval()
             except FileNotFoundError:
@@ -49,7 +46,6 @@ def run_comprehensive_fpr_experiment():
             fp_locs = []
             
             for trial in range(n_trials):
-                # Generate Stationary Null Data
                 if dist == 'student_t':
                     X_null = generate_student_t_segment(nu=3.0, rho=0.5, n=1000, p=d)
                 else:
@@ -78,8 +74,6 @@ def run_comprehensive_fpr_experiment():
                 'FPR': fpr
             })
             all_fp_locations[f"{dist}_d{d}"] = fp_locs
-
-    # --- CRITICAL SAFETY: Save CSV before plotting ---
     summary_df = pd.DataFrame(all_results)
     summary_df.to_csv("paper_plots/comprehensive_fpr_results.csv", index=False)
     print("\n[✓] Raw results saved to paper_plots/comprehensive_fpr_results.csv")
@@ -91,7 +85,6 @@ def plot_dual_dist_fpr(df, fp_locations, n_trials):
     gs = GridSpec(2, 1, height_ratios=[1, 1])
     sns.set_theme(style="whitegrid")
 
-    # --- PANEL A: FPR Comparison ---
     ax1 = fig.add_subplot(gs[0])
     sns.barplot(data=df, x='Dimension', y='FPR', hue='Distribution', 
                 palette="viridis", ax=ax1, edgecolor='black', alpha=0.8)
@@ -101,7 +94,6 @@ def plot_dual_dist_fpr(df, fp_locations, n_trials):
     ax1.set_ylabel("False Positive Rate (%)", fontweight='bold', fontsize=14)
     ax1.set_xlabel("Data Dimension", fontweight='bold', fontsize=14)
     
-    # Text annotation for the bars
     for p in ax1.patches:
         if p.get_height() > 0:
             ax1.annotate(f'{p.get_height():.1f}%', 
@@ -109,9 +101,7 @@ def plot_dual_dist_fpr(df, fp_locations, n_trials):
                          ha='center', va='center', xytext=(0, 9), 
                          textcoords='offset points', fontweight='bold')
 
-    # --- PANEL B: Spatio-Temporal FP Density ---
     ax2 = fig.add_subplot(gs[1])
-    # Filter out empty lists to avoid KDE errors
     plot_labels = [k for k, v in fp_locations.items() if len(v) > 0]
     palette = sns.color_palette("husl", len(plot_labels))
     

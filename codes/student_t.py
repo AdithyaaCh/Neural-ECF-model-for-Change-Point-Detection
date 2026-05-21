@@ -23,24 +23,15 @@ class StudentTConfig:
         self.nu2 = nu_post
 
 def generate_student_t_segment(nu: float, rho: float, n: int, p: int) -> np.ndarray:
-    # Create p-dimensional correlation matrix
     sigma = np.full((p, p), rho)
     np.fill_diagonal(sigma, 1.0)
-    
-    # --- ULTRA-ROBUST SAFEGUARD ---
-    # 1. Use eigvalsh (guaranteed real for symmetric matrices)
-    # 2. .real ensures no 'complex128' type leaks into the float64 matrix
+
     eigenvalues = np.linalg.eigvalsh(sigma)
     min_eig = np.min(eigenvalues).real 
     
     if min_eig < 1e-6:
-        # Add a small ridge to ensure strict positive-definiteness
-        # This solves the d=50 negative correlation limit mathematically
         sigma += (abs(min_eig) + 1e-5) * np.eye(p)
-    # ------------------------------
 
-    # G ~ N(0, Sigma)
-    # check_valid='ignore' because we manually handled the PD check above
     G = np.random.multivariate_normal(mean=np.zeros(p), cov=sigma, size=n, check_valid='ignore')
     
     chi2 = np.random.chisquare(df=nu, size=(n, 1))

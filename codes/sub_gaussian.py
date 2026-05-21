@@ -27,11 +27,8 @@ def generate_subgaussian_segment(alpha: float, rho: float, n: int, p: int) -> np
     sigma = np.full((p, p), rho)
     np.fill_diagonal(sigma, 1.0)
     
-    # Gaussian base G ~ N(0, Sigma)
     G = np.random.multivariate_normal(mean=np.zeros(p), cov=sigma, size=n)
     
-    # Mixing variable A ~ S_{alpha/2}(gamma, 1, 0)
-    # gamma parameter from Paper Eq. 11: (cos(pi * alpha / 4))^(2/alpha)
     gamma_val = (np.cos(np.pi * alpha / 4.0)) ** (2.0 / alpha)
     
     A = stblrnd(
@@ -42,7 +39,6 @@ def generate_subgaussian_segment(alpha: float, rho: float, n: int, p: int) -> np
         size=(n, 1)
     )
     
-    # Mixing: X = sqrt(A) * G
     return np.sqrt(np.abs(A)) * G
 
 def sample_subgaussian_series(config: SubGaussianConfig) -> tuple[np.ndarray, int]:
