@@ -57,8 +57,7 @@ Algorithm 1 calibrates on ρ_pre=0.5 → ρ_post=0.0 (correlation-only shift, no
 |---|---|---|
 | Sub-Gaussian | tail index α₁ | 1.9 |
 | Sub-Gaussian | correlation ρ₁ | 0.5 |
-| Student-t | degrees of freedom ν₁ | 5.0 |
-| Student-t | correlation ρ₁ | 0.5 |
+
 
 Change point fixed at n* = N/2 = 500 (mid-series). Series length N = 1000.
 
@@ -68,10 +67,9 @@ Change point fixed at n* = N/2 = 500 (mid-series). Series length N = 1000.
 |---|---|---|
 | Sub-Gaussian | α₂ | 1.5, 1.7, 1.85, 1.95, 1.98 |
 | Sub-Gaussian | ρ₂ | -0.9, -0.6, -0.3, 0.0, 0.3, 0.6, 0.9 |
-| Student-t | ν₂ | 2.0, 3.0, 5.0, 8.0, 12.0 |
-| Student-t | ρ₂ | -0.9, -0.6, -0.3, 0.0, 0.3, 0.6, 0.9 |
 
-35 cells total (5 × 7), 500 trials per cell (sub-Gaussian) / 30 trials per cell (student-t).
+
+35 cells total (5 × 7), 500 trials per cell (sub-Gaussian)
 
 ---
 
