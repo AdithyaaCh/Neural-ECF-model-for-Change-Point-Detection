@@ -90,7 +90,7 @@ The ECF method detects change points by comparing the empirical characteristic f
 
 - `Neural-ECF[argmax]`: returns the position with the single highest score in the smoothed series. Simple and always returns an answer. Works well when there is exactly one change point and the score curve has one dominant peak.
 
-- `Neural-ECF[peaks]`: first finds all local peaks in the score series using prominence-based peak detection (`scipy.signal.find_peaks` with `distance=L//SCAN_STEP`). If no peaks are found it falls back to argmax. If peaks are found it returns the one with the highest prominence (sharpest relative rise above its surroundings), which is more robust to a noisy baseline that might shift the global argmax away from the true change point. For a single change point setting argmax and peaks give identical results in most trials — any difference appears near the boundaries of the parameter grid where the score curve is flatter.
+- `Neural-ECF[peaks]`: first finds all local peaks in the score series using prominence-based peak detection (`scipy.signal.find_peaks` with `distance=L//SCAN_STEP`). If no peaks are found it falls back to argmax. If peaks are found it returns the one with the highest prominence (sharpest relative rise above its surroundings), which is more robust to a noisy baseline that might shift the global argmax away from the true change point.
 
 ---
 
