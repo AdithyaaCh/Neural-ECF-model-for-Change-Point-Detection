@@ -1,244 +1,74 @@
-# Neural-ECF for Change Point Detection
+# ECF vs MIDAST: Change Point Detection Benchmark
 
-## Overview
+Comparison of the Empirical Characteristic Function (ECF) method against MIDAST on sub-Gaussian multivariate data.
 
-This project explores a representation learning approach for multivariate change point detection using a Neural Empirical Characteristic Function (Neural-ECF) model.
-Parent paper - "https://www.sciencedirect.com/science/article/pii/S1566253525005184"
-
-The core idea is to learn a transformation that maps time-series windows into a feature space where distributional differences between segments become easier to detect. This learned representation is then used within a sliding-window framework to identify structural changes in the data.
-
-The work focuses on understanding when such learned representations actually help — and where they fail.
+**MIDAST paper:** "Identifying the Temporal Distribution Structure in Multivariate Data for Time-Series Segmentation Based on Two-Sample Test"
 
 ---
 
-## Problem Setting
+## Folder structure
 
-We consider a single change point setting:
-
-- A multivariate time series $X_1, \dots, X_N$
-- A true change point at $n^*$
-- Distribution shift between:
-  - Pre-change segment
-  - Post-change segment
-
-The goal is to:
-
-- Detect the change point location  
-- Minimize localization error (MAE)  
-- Maintain reliable detection (high recall, low false positives)
-
----
-
-## Base Paper
-
-This project is based on the following paper:
-
-**Identifying the Temporal Distribution Structure in Multivariate Data for Time-Series Segmentation Based on Two-Sample Test**
-
-This work (MIDAST) proposes a two-sample testing framework for detecting change points in multivariate time series by comparing distributions across segments.
-
-It provides:
-- A principled statistical framework for change-point detection  
-- Simulation setups (Student-t and sub-Gaussian data)  
-- Benchmark comparisons against methods such as e-Divisive and KCPA  
-
-In this project, MIDAST serves as the primary reference for:
-- Experimental design  
-- Evaluation methodology  
-- Baseline comparisons  
-
-The Neural-ECF approach is developed and evaluated within this same framework to understand whether learned representations can improve detection performance.
-
----
-
-## Method: Neural-ECF
-
-### Representation Learning
-
-A neural network is trained using triplet loss:
-
-- Anchor: window from regime A  
-- Positive: nearby window from same regime  
-- Negative: window from different regime  
-
-- The neural network only learns a frequency matrix and does not correspond to a deep architecture. 
-
-The objective is to enforce:
-
-$$
-\text{sim}(A, P) - \text{sim}(A, N) \geq \text{margin}
-$$
+```
+.
+├── codes/
+│   ├── ecf_vs_midast_subgaussian.py      # Sub-Gaussian d=10, MIDAST s=10, ECF stride=5
+│   ├── ecf_vs_midast_subgaussian_s1.py   # Sub-Gaussian d=10, MIDAST s=1,  ECF stride=5
+│   └── trajectory_utils.py               # stblrnd: alpha-stable sampler (calls R via rpy2)
+│
+├── common/
+│   ├── algorithm12.py                    # Algorithm 1 (window calibration) + k rule-of-thumb
+│   └── data_simulators.py                # generate_subgaussian_segment, generate_student_t_segment
+│
+├── vendored_midast/                      # MIDAST source copied verbatim from MIDAST-1.0.0
+│   ├── multivariate_statistical_test_method.py   # ChangeDetector (Algorithm 1/2 + fit/analyze)
+│   ├── multivariate_tests_from_R.py              # MMDTest via rpy2
+│   ├── ks_2samp.py / ndtest.py                   # KSTest internals
+│   └── ...
+│
+├── midast_runner.py                      # Thin wrapper: run MIDAST on a single series from CLI
+│
+├── results_subg_d10/                     # Sub-Gaussian d=10, s=10  (35 cells, 500 trials each)
+├── results_s1_subg_d10/                  # Sub-Gaussian d=10, s=1   (35 cells, 500 trials each)
+└── results_subg_d2/                      # Sub-Gaussian d=2          (35 cells, 500 trials each)
+```
 
 
+## MIDAST implementation details
 
-In practice:
+The vendored code is **unmodified** from MIDAST-1.0.0. 
 
-- Margin = 0.4  
-- Cosine similarity is used in the learned embedding space  
+| Parameter | Value | Source |
+|-----------|-------|--------|
+| Window `w` | Algorithm 1 (MC power calibration, target=0.9) | Paper §3.1 |
+| Segments `k` | `w / (100 × s)` rule of thumb | Paper Appendix A |
+| Shift `s` | 1, 5, or 10 depending on script | Paper §4 |
+| Decision rule | `based_on="statistic"`, `max_no_changes=1` | Paper §3.2 |
+| Test | KSTest (Fasano-Franceschini for d>1) | Paper §2 |
+
+Algorithm 1 calibrates on ρ_pre=0.5 → ρ_post=0.0 (correlation-only shift, no tail change). Results: **w=50** for sub-Gaussian d=10.
 
 ---
 
-### Detection Pipeline
+## ECF implementation details
 
-After training:
-
-1. Slide a window across the time series  
-
-2. Compute embeddings:
-   - $z_p(t)$: past window  
-   - $z_f(t)$: future window  
-
-3. Compute detection score:
-
-$$
-D(t) = 1 - \langle z_p(t), z_f(t) \rangle
-$$
-
-4. Peaks in $D(t)$ correspond to candidate change points  
-
-5. A statistical verification step (threshold $\alpha$) is used to control false positives  
+- **Frequencies:** M=256 directions U ~ N(0,I)/√d, fixed seed, drawn once
+- **Scales:** multi-scale {0.5, 1.0, 2.0} → fingerprint dimension = 3 × 2 × 256 = 1536
+- **Fingerprint:** [cos(X·(sU)^T).mean, sin(X·(sU)^T).mean] per scale, L2-normalised
+- **Score:** cosine dissimilarity `1 − z_pre · z_post` between two windows of length L=150
+- **Scan:** stride SCAN_STEP=5 (sub-Gaussian) or 10 (student-t), smooth=5
 
 ---
 
-## Baselines
 
-Following the MIDAST framework, the following methods are implemented for comparison:
+## Running an experiment
 
-- MIDAST (KS-based and MMD-based)  
-- e-Divisive (energy distance)  
-- KCPA (kernel-based segmentation)  
+```bash
 
-**Note:**  
-e-Divisive and KCPA are implemented as greedy segmentation baselines and are not exact reproductions of the original formulations.
+WORKERS=8 python3 codes/ecf_vs_midast_subgaussian.py
 
----
+SMOKE=1 python3 codes/ecf_vs_midast_studentt_s5.py
 
-## Experimental Setup
+NO_MMD=1 python3 codes/ecf_vs_midast_subgaussian.py
+```
 
-### Data
-
-Two distributions are used:
-
-- **Student-t**
-  - Heavy-tailed  
-  - Controlled via degrees of freedom $\nu$
-
-- **Sub-Gaussian (Alpha-stable)**
-  - Controlled via tail parameter $\alpha$
-
-### Key parameters:
-
-- Sample size: $N = 1000$  
-- Change point: $n^* \in [0.1N, 0.9N]$  
-- Dimensions tested: $d = 2, 10$  
-- Correlation shift:
-  - $\rho_1 = 0.9$ (pre-change)  
-  - $\rho_2 \in [-0.9, 0.9]$  
-
----
-
-## Evaluation Metrics
-
-- **MAE** (Mean Absolute Error)  
-- **Recall**  
-- **Runtime**  
-- **False Positive Rate (FPR)**  
-
----
-
-## Key Findings
-
-### 1. High-Dimensional Advantage
-
-- Neural-ECF performs significantly better in $d = 10$ compared to $d = 2$  
-- Particularly strong performance on sub-Gaussian data  
-- Achieves:
-  - Lower MAE  
-  - Better recall stability near boundaries  
-
----
-
-### 2. Representation Limitation
-
-- The model fails to achieve the target triplet margin (0.4)  
-- Empirical margin $\approx 0.31$–$0.34$  
-- This leads to:
-  - Weak separation between regimes  
-  - Low contrast in detection scores  
-
----
-
-### 3. False Positive Issue
-
-- FPR $\approx 20\%$ across all settings  
-- False detections occur across the entire time axis (not just boundaries)  
-
-**Implication:**  
-Raw scores are not reliable without statistical thresholding  
-
----
-
-### 4. Window Size Trade-off
-
-- Larger window size $L$:
-  - Reduces noise  
-  - But blurs regime boundaries  
-
-- Leads to decreasing signal-to-noise ratio  
-
----
-
-### 5. Training–Testing Mismatch
-
-- Training uses clean triplets with clear separation  
-- Testing involves subtle, continuous transitions  
-
-**Result:**  
-Learned embedding does not generalize strongly to detection  
-
----
-
-### 6. Comparison with CNNs
-
-- CNN-based architectures were also tested  
-- Observed:
-  - Worse performance in low dimensions ($d = 2$)  
-  - Less stable representations  
-
----
-
-## Limitations
-
-- Weak margin realization → insufficient separation  
-- High false positive rate without calibration  
-- Sensitivity to threshold $\alpha$  
-- Dependence on window size $L$  
-- Training objective not fully aligned with detection objective  
-
----
-
-## Conclusion
-
-Neural-ECF shows promise in **high-dimensional settings**, where representation learning begins to provide meaningful gains over classical methods.
-
-However, its effectiveness is currently limited by:
-
-- weak discriminative power  
-- calibration issues  
-- sensitivity to hyperparameters  
-
-Future improvements should focus on:
-
-- stronger representation separation  
-- adaptive thresholding  
-- better alignment between training and detection objectives  
-
----
-
-## Status
-
-This is an experimental research project focused on:
-
-- understanding behavior of learned representations  
-- identifying failure modes  
-- benchmarking against classical methods  
+Results are written to the corresponding `results_*/` folder with per-cell checkpointing — safe to kill and resume.
